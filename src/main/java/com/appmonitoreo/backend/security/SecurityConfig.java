@@ -2,6 +2,7 @@ package com.appmonitoreo.backend.security;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,6 +21,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+
+    @Value("${app.security.require-https:false}")
+    private boolean requireHttps;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
@@ -41,6 +45,13 @@ public class SecurityConfig {
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // RNF03: en producción (app.security.require-https=true) se exige HTTPS.
+        // Se deja desactivado por defecto para no romper el desarrollo local sin TLS.
+        if (requireHttps) {
+            http.requiresChannel(c -> c.anyRequest().requiresSecure());
+        }
+
         return http.build();
     }
 

@@ -4,7 +4,9 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class IncidenteRequest {
 
@@ -24,6 +26,9 @@ public class IncidenteRequest {
     @DecimalMax(value = "180.0", message = "Longitud fuera de rango")
     private BigDecimal longitud;
 
+    @PastOrPresent(message = "La fecha del incidente no puede ser futura")
+    private LocalDateTime fechaIncidente;
+
     public String getTipoIncidente() { return tipoIncidente; }
     public void setTipoIncidente(String tipoIncidente) { this.tipoIncidente = tipoIncidente; }
 
@@ -35,4 +40,7 @@ public class IncidenteRequest {
 
     public BigDecimal getLongitud() { return longitud; }
     public void setLongitud(BigDecimal longitud) { this.longitud = longitud; }
+
+    public LocalDateTime getFechaIncidente() { return fechaIncidente; }
+    public void setFechaIncidente(LocalDateTime fechaIncidente) { this.fechaIncidente = fechaIncidente; }
 }
