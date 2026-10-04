@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Credenciales (nunca commitear) ###
+firebase-service-account*.json
+**/firebase-credentials*.json
+application-local.properties

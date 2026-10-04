@@ -23,6 +23,7 @@ public class ValidacionAutomaticaService {
     static final double RADIO_METROS = 150;
     static final int VENTANA_HORAS = 24;
     static final int MIN_REPORTES = 3;
+    private static final long UMBRAL_MS_RNF07 = 5000;
 
     private final IncidenteRepository incidenteRepository;
     private final ValidacionReporteRepository validacionReporteRepository;
@@ -38,6 +39,20 @@ public class ValidacionAutomaticaService {
 
     @Transactional
     public boolean evaluarYValidar(Incidente incidente) {
+        long inicio = System.currentTimeMillis();
+        try {
+            return evaluar(incidente);
+        } finally {
+            long duracionMs = System.currentTimeMillis() - inicio;
+            if (duracionMs > UMBRAL_MS_RNF07) {
+                eventoLogService.warning("RNF07_VALIDACION_AUTOMATICA",
+                        "La evaluación del incidente " + incidente.getIdIncidente() + " tardó " + duracionMs +
+                                " ms (umbral RNF07: " + UMBRAL_MS_RNF07 + " ms)");
+            }
+        }
+    }
+
+    private boolean evaluar(Incidente incidente) {
         if (!"PENDIENTE".equals(incidente.getEstado())) {
             return false;
         }
