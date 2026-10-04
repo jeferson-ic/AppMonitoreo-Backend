@@ -1,5 +1,6 @@
 package com.appmonitoreo.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ public class Incidente {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario")
+    @JsonIgnoreProperties({"correo", "telefono", "rol", "estado", "fechaRegistro", "hibernateLazyInitializer", "handler"})
     private Usuario usuario;
 
     @Column(name = "tipo_incidente", length = 50)

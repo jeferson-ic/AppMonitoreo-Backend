@@ -5,15 +5,18 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class IncidenteRequest {
 
     @NotBlank(message = "El tipo de incidente es obligatorio")
+    @Size(max = 50, message = "El tipo de incidente no puede superar 50 caracteres")
     private String tipoIncidente;
 
     @NotBlank(message = "La descripción es obligatoria")
+    @Size(max = 1000, message = "La descripción no puede superar 1000 caracteres")
     private String descripcion;
 
     @NotNull(message = "La latitud es obligatoria")

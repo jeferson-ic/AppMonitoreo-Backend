@@ -2,6 +2,7 @@ package com.appmonitoreo.backend.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class LoginRequest {
 
@@ -10,6 +11,7 @@ public class LoginRequest {
     private String correo;
 
     @NotBlank(message = "La contraseña es obligatoria")
+    @Size(max = 72, message = "Contraseña inválida")
     private String contrasena;
 
     public String getCorreo() { return correo; }
