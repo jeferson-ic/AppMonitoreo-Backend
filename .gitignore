@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Variables locales ###
+.env
+*.env
+
+### Credenciales (nunca commitear) ###
+firebase-service-account*.json
+**/firebase-credentials*.json
+application-local.properties
