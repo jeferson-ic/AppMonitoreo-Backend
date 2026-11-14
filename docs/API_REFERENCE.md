@@ -83,13 +83,15 @@ Request:
   "fechaIncidente": "2026-09-22T14:30:00"
 }
 ```
-- `tipoIncidente`: obligatorio, uno de los valores de `GET /incidentes/tipos` (si mandas otro, se le asigna riesgo `MEDIO` por defecto).
+- `tipoIncidente`: obligatorio, uno de los valores de `GET /incidentes/tipos`. Cualquier otro valor devuelve `400` con `detalles.tipoIncidente`.
 - `descripcion`: obligatorio.
 - `latitud`/`longitud`: obligatorios, decimales (rango -90..90 / -180..180).
-- `fechaIncidente`: **opcional**, ISO-8601 `yyyy-MM-ddTHH:mm:ss`. No puede ser futura. Si se omite, se usa la hora del servidor.
+- `fechaIncidente`: **opcional**, ISO-8601 `yyyy-MM-ddTHH:mm:ss`. No puede ser futura. Si se omite, se usa la hora actual de Perú (UTC-5).
 
 Respuesta `201` (el objeto `Incidente` guardado; `estado` puede llegar ya como
-`"VALIDADO"` si el sistema lo auto-validó al crearlo):
+`"VALIDADO"` si el sistema lo auto-validó al crearlo). La validación automática
+ocurre cuando **3 o más usuarios distintos** reportan el mismo tipo a 150 m o menos
+en 24 h; en ese caso se validan **todos** los reportes pendientes del grupo:
 ```json
 {
   "idIncidente": 15,
@@ -137,7 +139,7 @@ Query params: `lat` (double, obligatorio), `lng` (double, obligatorio), `radioKm
 Respuesta `200`: array de `Incidente`.
 
 ### GET /incidentes/zonas-riesgo
-Auth: Bearer token. Puntos agregados (heatmap) — útil para pintar el mapa sin cargar cada incidente individual.
+Auth: Bearer token. Puntos agregados (heatmap) — útil para pintar el mapa sin cargar cada incidente individual. Solo considera incidentes `VALIDADO`.
 
 Respuesta `200`:
 ```json
@@ -170,9 +172,11 @@ Respuesta `200`:
 {
   "enZonaDeRiesgo": true,
   "incidentesCercanos": 2,
-  "detalle": [ /* array de Incidente con nivelRiesgo=ALTO */ ]
+  "detalle": [ /* array de Incidente con nivelRiesgo=ALTO y estado=VALIDADO */ ]
 }
 ```
+Solo cuentan los incidentes **validados**: un reporte `PENDIENTE` se muestra en el
+mapa como "sin confirmar", pero no genera alertas.
 Si `enZonaDeRiesgo` es `true`, mostrar notificación/banner local en la app.
 
 > Nota: el envío de push real por Firebase Cloud Messaging ya está integrado en
@@ -199,7 +203,17 @@ Respuesta `200` → `{ "mensaje": "Token FCM actualizado" }`
 Auth: Bearer token, rol `ADMIN`. Respuesta `200`: array de `Incidente` con `estado = PENDIENTE`.
 
 ### PUT /admin/incidentes/{id}/validar
-Auth: rol `ADMIN`. Sin body. Respuesta `200` → `{ "mensaje": "Incidente {id} marcado como VALIDADO" }`
+Auth: rol `ADMIN`. Sin body. Respuesta `200` → `{ "mensaje": "Incidente {id} marcado como VALIDADO" }`.
+Si el incidente es de riesgo ALTO, se registra su alerta (una sola vez por incidente).
+
+Transiciones permitidas para el administrador (otra combinación devuelve `409`):
+
+| Estado actual | Puede pasar a |
+|---|---|
+| PENDIENTE | VALIDADO, RECHAZADO, ELIMINADO |
+| VALIDADO | RECHAZADO, ELIMINADO |
+| RECHAZADO | VALIDADO, ELIMINADO |
+| ELIMINADO | (estado final) |
 
 ### PUT /admin/incidentes/{id}/rechazar
 Auth: rol `ADMIN`. Sin body. Respuesta `200` → `{ "mensaje": "Incidente {id} marcado como RECHAZADO" }`

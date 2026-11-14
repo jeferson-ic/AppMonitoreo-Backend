@@ -17,6 +17,8 @@ import java.util.Map;
 /**
  * RF04: detecta si el usuario se encuentra dentro de una zona de riesgo ALTO
  * y dispara la alerta correspondiente (evento registrado + intento de push).
+ * Solo cuentan los incidentes VALIDADOS: un reporte sin confirmar informa en
+ * el mapa, pero no genera alertas.
  */
 @RestController
 @RequestMapping("/alertas")
@@ -52,6 +54,7 @@ public class AlertaController {
 
         List<Incidente> cercanosAlto = incidenteRepository.buscarEnCaja(latMin, latMax, lngMin, lngMax)
                 .stream()
+                .filter(i -> "VALIDADO".equals(i.getEstado()))
                 .filter(i -> "ALTO".equals(i.getNivelRiesgo()))
                 .filter(i -> GeoUtils.distanciaMetros(lat, lng,
                         i.getLatitud().doubleValue(), i.getLongitud().doubleValue()) <= radioMetros)

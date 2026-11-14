@@ -1,5 +1,6 @@
 package com.appmonitoreo.backend.model;
 
+import com.appmonitoreo.backend.util.FechaUtil;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -23,7 +24,7 @@ public class Alerta {
     private String nivelRiesgo;
 
     @Column(name = "fecha_alerta")
-    private LocalDateTime fechaAlerta = LocalDateTime.now();
+    private LocalDateTime fechaAlerta = FechaUtil.ahora();
 
     public Integer getIdAlerta() { return idAlerta; }
     public void setIdAlerta(Integer idAlerta) { this.idAlerta = idAlerta; }

@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, rama-de-briam]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:

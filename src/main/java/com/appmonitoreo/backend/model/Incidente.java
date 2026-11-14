@@ -1,5 +1,6 @@
 package com.appmonitoreo.backend.model;
 
+import com.appmonitoreo.backend.util.FechaUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -35,7 +36,7 @@ public class Incidente {
     private String nivelRiesgo = "MEDIO";
 
     @Column(name = "fecha_incidente")
-    private LocalDateTime fechaIncidente = LocalDateTime.now();
+    private LocalDateTime fechaIncidente = FechaUtil.ahora();
 
     @Column(length = 20)
     private String estado = "PENDIENTE";

@@ -1,5 +1,6 @@
 package com.appmonitoreo.backend.model;
 
+import com.appmonitoreo.backend.util.FechaUtil;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -26,7 +27,7 @@ public class EventoSistema {
     private Usuario usuario;
 
     @Column(name = "fecha_evento")
-    private LocalDateTime fechaEvento = LocalDateTime.now();
+    private LocalDateTime fechaEvento = FechaUtil.ahora();
 
     public Integer getIdEvento() { return idEvento; }
     public void setIdEvento(Integer idEvento) { this.idEvento = idEvento; }

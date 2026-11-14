@@ -1,5 +1,6 @@
 package com.appmonitoreo.backend.model;
 
+import com.appmonitoreo.backend.util.FechaUtil;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -24,7 +25,7 @@ public class ValidacionReporte {
     private String accion;
 
     @Column(name = "fecha_accion")
-    private LocalDateTime fechaAccion = LocalDateTime.now();
+    private LocalDateTime fechaAccion = FechaUtil.ahora();
 
     @Column(length = 255)
     private String observacion;

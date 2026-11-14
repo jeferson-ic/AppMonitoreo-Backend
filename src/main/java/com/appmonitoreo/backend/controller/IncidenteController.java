@@ -1,10 +1,8 @@
 package com.appmonitoreo.backend.controller;
 
 import com.appmonitoreo.backend.dto.IncidenteRequest;
-import com.appmonitoreo.backend.model.Alerta;
 import com.appmonitoreo.backend.model.Incidente;
 import com.appmonitoreo.backend.model.Usuario;
-import com.appmonitoreo.backend.repository.AlertaRepository;
 import com.appmonitoreo.backend.repository.IncidenteRepository;
 import com.appmonitoreo.backend.repository.UsuarioRepository;
 import com.appmonitoreo.backend.service.EventoLogService;
@@ -26,7 +24,8 @@ import java.util.Map;
 @RequestMapping("/incidentes")
 public class IncidenteController {
 
-    private static final Map<String, String> RIESGO_POR_TIPO = Map.of(
+    /** Tipos de incidente permitidos y su nivel de riesgo. */
+    static final Map<String, String> RIESGO_POR_TIPO = Map.of(
             "Robo a mano armada", "ALTO",
             "Asalto", "ALTO",
             "Secuestro", "ALTO",
@@ -39,18 +38,15 @@ public class IncidenteController {
 
     private final IncidenteRepository incidenteRepository;
     private final UsuarioRepository usuarioRepository;
-    private final AlertaRepository alertaRepository;
     private final ValidacionAutomaticaService validacionAutomaticaService;
     private final EventoLogService eventoLogService;
 
     public IncidenteController(IncidenteRepository incidenteRepository,
                                UsuarioRepository usuarioRepository,
-                               AlertaRepository alertaRepository,
                                ValidacionAutomaticaService validacionAutomaticaService,
                                EventoLogService eventoLogService) {
         this.incidenteRepository = incidenteRepository;
         this.usuarioRepository = usuarioRepository;
-        this.alertaRepository = alertaRepository;
         this.validacionAutomaticaService = validacionAutomaticaService;
         this.eventoLogService = eventoLogService;
     }
@@ -58,6 +54,12 @@ public class IncidenteController {
     @PostMapping
     public ResponseEntity<?> crear(@Valid @RequestBody IncidenteRequest req,
                                    Authentication auth) {
+        if (!RIESGO_POR_TIPO.containsKey(req.getTipoIncidente())) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Datos inválidos",
+                    "detalles", Map.of("tipoIncidente", "Tipo de incidente no válido")));
+        }
+
         String correo = auth.getName();
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -71,18 +73,10 @@ public class IncidenteController {
         if (req.getFechaIncidente() != null) {
             inc.setFechaIncidente(req.getFechaIncidente());
         }
-        String nivelRiesgo = RIESGO_POR_TIPO.getOrDefault(req.getTipoIncidente(), "MEDIO");
+        String nivelRiesgo = RIESGO_POR_TIPO.get(req.getTipoIncidente());
         inc.setNivelRiesgo(nivelRiesgo);
 
         Incidente guardado = incidenteRepository.save(inc);
-
-        if ("ALTO".equals(nivelRiesgo)) {
-            Alerta alerta = new Alerta();
-            alerta.setIncidente(guardado);
-            alerta.setNivelRiesgo("ALTO");
-            alerta.setMensaje("Zona de riesgo ALTO: " + req.getTipoIncidente() + " reportado cerca");
-            alertaRepository.save(alerta);
-        }
 
         boolean autoValidado = validacionAutomaticaService.evaluarYValidar(guardado);
 
@@ -132,9 +126,10 @@ public class IncidenteController {
         return ResponseEntity.ok(RIESGO_POR_TIPO.keySet().stream().sorted().toList());
     }
 
+    /** Zonas de riesgo: solo consideran incidentes VALIDADOS. */
     @GetMapping("/zonas-riesgo")
     public ResponseEntity<?> zonasRiesgo() {
-        var zonas = incidenteRepository.filtrar(null, null, null, null).stream()
+        var zonas = incidenteRepository.findByEstado("VALIDADO").stream()
                 .collect(java.util.stream.Collectors.groupingBy(
                         i -> Map.of(
                                 "celda_lat", i.getLatitud().setScale(3, java.math.RoundingMode.HALF_UP),

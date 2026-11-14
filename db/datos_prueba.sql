@@ -16,6 +16,8 @@
 
 USE db_zonas_peligrosas;
 SET NAMES utf8mb4;
+-- Fechas en hora de Perú (UTC-5), igual que el backend (FechaUtil).
+SET time_zone = '-05:00';
 SET @safe_updates_previo = @@SQL_SAFE_UPDATES;
 SET SQL_SAFE_UPDATES = 0;
 
@@ -73,7 +75,7 @@ SET @admin := (SELECT id_usuario FROM usuarios WHERE correo = 'admin.demo@demo.p
 -- 2. Incidentes
 --    nivel según RIESGO_POR_TIPO del backend:
 --      ALTO : Robo a mano armada, Asalto, Secuestro
---      MEDIO: Robo, Vandalismo, Acoso (y tipos "Otro", p. ej. Incendio)
+--      MEDIO: Robo, Vandalismo, Acoso
 --      BAJO : Sospechoso, Accidente
 --    validacion: AUTO (VALIDADO_AUTO), MANUAL (admin valida),
 --                RECHAZO, ELIMINA o NULL (sin acción todavía)
@@ -94,15 +96,15 @@ CREATE TEMPORARY TABLE seed_inc (
 INSERT INTO seed_inc VALUES
 -- Zona caliente 1: Gamarra, La Victoria
 ('camila.flores@demo.pe',  'Asalto', 'ALTO',  'Dos sujetos en moto asaltaron a una comerciante en la cuadra 6 de Jr. Gamarra.',              -12.0660000, -77.0138000,  20, 'VALIDADO',  'MANUAL'),
-('andrea.chavez@demo.pe',  'Asalto', 'ALTO',  'Asaltaron a un cliente al salir de una galería, se llevaron su mochila y celular.',          -12.0662000, -77.0140000,   9, 'PENDIENTE', NULL),
+('andrea.chavez@demo.pe',  'Asalto', 'ALTO',  'Asaltaron a un cliente al salir de una galería, se llevaron su mochila y celular.',          -12.0662000, -77.0140000,   9, 'VALIDADO',  'AUTO'),
 ('carlos.mendoza@demo.pe', 'Asalto', 'ALTO',  'Otro asalto en la esquina de Gamarra con Huánuco, mismo modus operandi en moto.',            -12.0659000, -77.0137000,   3, 'VALIDADO',  'AUTO'),
 ('valeria.huaman@demo.pe', 'Robo',   'MEDIO', 'Robo de celular al paso dentro del emporio, cerca del paradero de Av. Aviación.',            -12.0661000, -77.0142000,  50, 'VALIDADO',  'MANUAL'),
 ('diego.salazar@demo.pe',  'Robo',   'MEDIO', 'Le abrieron la cartera a una señora en plena aglomeración de compras.',                      -12.0663000, -77.0139000, 130, 'VALIDADO',  'MANUAL'),
 ('jorge.castillo@demo.pe', 'Robo',   'MEDIO', 'Reporte duplicado de robo de celular en Gamarra.',                                           -12.0660000, -77.0141000, 300, 'RECHAZADO', 'RECHAZO'),
 
 -- Zona caliente 2: Parque Kennedy, Miraflores
-('lucia.ramirez@demo.pe',  'Robo',               'MEDIO', 'Robo de celular a un turista frente a la iglesia Virgen Milagrosa.',                      -12.1219000, -77.0299000,  22, 'PENDIENTE', NULL),
-('valeria.huaman@demo.pe', 'Robo',               'MEDIO', 'Arrebato de celular en la salida del parque hacia Av. Diagonal.',                         -12.1221000, -77.0301000,  12, 'PENDIENTE', NULL),
+('lucia.ramirez@demo.pe',  'Robo',               'MEDIO', 'Robo de celular a un turista frente a la iglesia Virgen Milagrosa.',                      -12.1219000, -77.0299000,  22, 'VALIDADO',  'AUTO'),
+('valeria.huaman@demo.pe', 'Robo',               'MEDIO', 'Arrebato de celular en la salida del parque hacia Av. Diagonal.',                         -12.1221000, -77.0301000,  12, 'VALIDADO',  'AUTO'),
 ('camila.flores@demo.pe',  'Robo',               'MEDIO', 'Tercer robo de celular en la zona del Parque Kennedy en el día.',                          -12.1218000, -77.0297000,   1, 'VALIDADO',  'AUTO'),
 ('lucia.ramirez@demo.pe',  'Robo a mano armada', 'ALTO',  'Asaltaron un local de comida con arma de fuego a la medianoche.',                         -12.1222000, -77.0298000,  70, 'VALIDADO',  'MANUAL'),
 ('andrea.chavez@demo.pe',  'Acoso',              'MEDIO', 'Un hombre sigue y acosa verbalmente a mujeres en la calle Berlín.',                        -12.1220000, -77.0300000, 200, 'VALIDADO',  'MANUAL'),
@@ -130,7 +132,7 @@ INSERT INTO seed_inc VALUES
 ('jorge.castillo@demo.pe', 'Secuestro',          'ALTO',  'Intento de secuestro al paso a un pasajero de taxi cerca de la Plaza Grau del Callao.',    -12.0566000, -77.1475000,  60, 'PENDIENTE', NULL),
 ('andrea.chavez@demo.pe',  'Asalto',             'ALTO',  'Asaltaron a una vecina al bajar del Metropolitano en la Estación Naranjal.',              -11.9850000, -77.0590000,   8, 'PENDIENTE', NULL),
 ('camila.flores@demo.pe',  'Robo',               'MEDIO', 'Robo de celular en el paradero frente a Plaza Norte.',                                     -12.0060000, -77.0590000, 180, 'VALIDADO',  'MANUAL'),
-('valeria.huaman@demo.pe', 'Incendio',           'MEDIO', 'Amago de incendio en un poste de alta tensión en Av. Primavera, Surco.',                   -12.1105000, -76.9920000,  40, 'PENDIENTE', NULL),
+('valeria.huaman@demo.pe', 'Accidente',          'BAJO',  'Auto chocó contra un poste de alta tensión en Av. Primavera, Surco.',                      -12.1105000, -76.9920000,  40, 'PENDIENTE', NULL),
 ('camila.flores@demo.pe',  'Sospechoso',         'BAJO',  'Reporte sin información suficiente en el Malecón de Miraflores.',                          -12.1290000, -77.0350000, 700, 'RECHAZADO', 'RECHAZO'),
 ('diego.salazar@demo.pe',  'Vandalismo',         'MEDIO', 'Rotura de lunas de autos estacionados en Chorrillos.',                                     -12.1690000, -77.0230000, 520, 'VALIDADO',  'MANUAL'),
 ('lucia.ramirez@demo.pe',  'Robo',               'MEDIO', 'Carterista en el Jr. de la Unión a la altura de la Iglesia de La Merced.',                 -12.0475000, -77.0310000, 900, 'VALIDADO',  'MANUAL'),
@@ -158,14 +160,17 @@ JOIN usuarios u   ON u.correo = s.correo
 JOIN incidentes i ON i.id_usuario = u.id_usuario AND i.descripcion = s.descripcion;
 
 -- ---------------------------------------------------------------------
--- 3. Alertas (el backend crea una por cada incidente de riesgo ALTO)
+-- 3. Alertas (el backend crea una por cada incidente de riesgo ALTO
+--    cuando el incidente queda VALIDADO, por consenso o por el admin)
 -- ---------------------------------------------------------------------
 INSERT INTO alertas (id_incidente, mensaje, nivel_riesgo, fecha_alerta)
 SELECT id_incidente,
        CONCAT('Zona de riesgo ALTO: ', tipo_incidente, ' reportado cerca'),
-       'ALTO', fecha_incidente
+       'ALTO',
+       CASE validacion WHEN 'AUTO' THEN fecha_incidente
+                       ELSE LEAST(fecha_incidente + INTERVAL 2 HOUR, @ahora) END
 FROM seed_map
-WHERE nivel_riesgo = 'ALTO';
+WHERE nivel_riesgo = 'ALTO' AND estado = 'VALIDADO';
 
 -- ---------------------------------------------------------------------
 -- 4. Validaciones (manuales del admin y automáticas)
