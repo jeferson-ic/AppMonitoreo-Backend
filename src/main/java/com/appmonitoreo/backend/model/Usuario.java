@@ -1,5 +1,6 @@
 package com.appmonitoreo.backend.model;
 
+import com.appmonitoreo.backend.util.FechaUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -36,7 +37,7 @@ public class Usuario {
     private String rol = "USUARIO";
 
     @Column(name = "fecha_registro")
-    private LocalDateTime fechaRegistro = LocalDateTime.now();
+    private LocalDateTime fechaRegistro = FechaUtil.ahora();
 
     @Column(nullable = false, length = 20)
     private String estado = "ACTIVO";

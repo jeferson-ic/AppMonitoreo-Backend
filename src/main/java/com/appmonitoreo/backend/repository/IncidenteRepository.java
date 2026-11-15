@@ -15,6 +15,8 @@ public interface IncidenteRepository extends JpaRepository<Incidente, Integer> {
 
     long countByEstado(String estado);
 
+    List<Incidente> findByEstado(String estado);
+
     @Query("SELECT i FROM Incidente i WHERE i.estado NOT IN ('ELIMINADO', 'RECHAZADO') " +
            "AND i.latitud BETWEEN :latMin AND :latMax " +
            "AND i.longitud BETWEEN :lngMin AND :lngMax")

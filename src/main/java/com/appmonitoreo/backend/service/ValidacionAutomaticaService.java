@@ -10,12 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
- * Implementa RF10 / RNF07: valida automáticamente un incidente cuando se
- * acumulan reportes similares (mismo tipo) dentro de un radio de 150 m y
- * una ventana de 24 horas.
+ * Implementa RF10 / RNF07: valida automáticamente un incidente cuando
+ * usuarios distintos (3 o más) reportan el mismo tipo de incidente dentro de
+ * un radio de 150 m y una ventana de 24 horas. Al cumplirse el consenso se
+ * validan todos los reportes pendientes del grupo.
  */
 @Service
 public class ValidacionAutomaticaService {
@@ -28,13 +31,16 @@ public class ValidacionAutomaticaService {
     private final IncidenteRepository incidenteRepository;
     private final ValidacionReporteRepository validacionReporteRepository;
     private final EventoLogService eventoLogService;
+    private final AlertaService alertaService;
 
     public ValidacionAutomaticaService(IncidenteRepository incidenteRepository,
                                        ValidacionReporteRepository validacionReporteRepository,
-                                       EventoLogService eventoLogService) {
+                                       EventoLogService eventoLogService,
+                                       AlertaService alertaService) {
         this.incidenteRepository = incidenteRepository;
         this.validacionReporteRepository = validacionReporteRepository;
         this.eventoLogService = eventoLogService;
+        this.alertaService = alertaService;
     }
 
     @Transactional
@@ -69,18 +75,47 @@ public class ValidacionAutomaticaService {
         BigDecimal lngMin = BigDecimal.valueOf(lng - deltaLng);
         BigDecimal lngMax = BigDecimal.valueOf(lng + deltaLng);
 
-        List<Incidente> candidatos = incidenteRepository.buscarSimilaresParaValidacion(
-                incidente.getTipoIncidente(), desde, latMin, latMax, lngMin, lngMax);
-
-        long similares = candidatos.stream()
+        List<Incidente> grupo = incidenteRepository.buscarSimilaresParaValidacion(
+                        incidente.getTipoIncidente(), desde, latMin, latMax, lngMin, lngMax)
+                .stream()
                 .filter(c -> GeoUtils.distanciaMetros(lat, lng,
                         c.getLatitud().doubleValue(), c.getLongitud().doubleValue()) <= RADIO_METROS)
-                .count();
+                .toList();
 
-        if (similares < MIN_REPORTES) {
+        // El consenso exige usuarios distintos: una misma persona no puede
+        // validar su propio reporte enviándolo varias veces.
+        Set<Integer> usuariosDistintos = new HashSet<>();
+        for (Incidente c : grupo) {
+            if (c.getUsuario() != null) {
+                usuariosDistintos.add(c.getUsuario().getIdUsuario());
+            }
+        }
+
+        if (usuariosDistintos.size() < MIN_REPORTES) {
             return false;
         }
 
+        // Se validan todos los reportes PENDIENTES del grupo, no solo el último.
+        String observacion = "Auto-validado: " + grupo.size() + " reportes similares de " +
+                usuariosDistintos.size() + " usuarios distintos en " +
+                (int) RADIO_METROS + "m / " + VENTANA_HORAS + "h";
+        boolean actualValidado = false;
+        for (Incidente c : grupo) {
+            if (!"PENDIENTE".equals(c.getEstado())) {
+                continue;
+            }
+            validar(c, observacion);
+            if (c.getIdIncidente().equals(incidente.getIdIncidente())) {
+                actualValidado = true;
+            }
+        }
+        if (!actualValidado) {
+            validar(incidente, observacion);
+        }
+        return true;
+    }
+
+    private void validar(Incidente incidente, String observacion) {
         incidente.setEstado("VALIDADO");
         incidenteRepository.save(incidente);
 
@@ -88,14 +123,13 @@ public class ValidacionAutomaticaService {
         validacion.setIncidente(incidente);
         validacion.setUsuario(null);
         validacion.setAccion("VALIDADO_AUTO");
-        validacion.setObservacion("Auto-validado: " + similares + " reportes similares en " +
-                (int) RADIO_METROS + "m / " + VENTANA_HORAS + "h");
+        validacion.setObservacion(observacion);
         validacionReporteRepository.save(validacion);
 
-        eventoLogService.info("VALIDACION_AUTOMATICA",
-                "Incidente " + incidente.getIdIncidente() + " auto-validado con " + similares +
-                        " reportes similares de tipo " + incidente.getTipoIncidente());
+        alertaService.registrarSiCorresponde(incidente);
 
-        return true;
+        eventoLogService.info("VALIDACION_AUTOMATICA",
+                "Incidente " + incidente.getIdIncidente() + " auto-validado por consenso de tipo " +
+                        incidente.getTipoIncidente());
     }
 }
